@@ -1,13 +1,24 @@
-# age keys: your personal key (age-keygen) + each host's SSH host key:
-#   ssh-to-age < /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
+# age keys
 keys:
   # Personal recovery key and host key are both able to decrypt shared secrets.
   - &admin_mohamed age13hmp8kf8uf4e2q8x7dxlm96twrr7rss9ak800ky2hlrnrqrhcqfs66mr4u
   - &host_crazy age1fysecxuj2kzncm0lewlusx6gd9m4us4tgqsps85g3x5e0mfpdccqqxjpt8
-# Encrypt host and user secret files to both recipients above.
+  - &ssh_mohamed age1us0rkd9pykjt73d0lrvl3pvez5mvza3cnk66pnp5sj3lfkn6ve5qlza5s3
+  - &age_koko age1khcdaljxdtvnvs6ldk0mdujlpyp9l9jtt8j77z5tdpwf792h6azslshy7h
+  - &ssh_koko age17wm4c3l4zga5t4x05uhvfny4mq5n8pekguka76cdk79jj3wumcpq6amsz9
+  - &age_kids age1a9v2cxe4jzecwprwhpv4a8y2scptzyp0nda0au9t9cyv9p6tvpfql0uwe3
+  - &ssh_kids age1xt2w9hlr60ck0ghp86eezv0e763m20r3fhad3g6qtet8vlqqru2s3usss8
+
 creation_rules:
-  - path_regex: secrets/(hosts|users)/.*\.yaml$
+  - path_regex: secrets/hosts/.*\.yaml$
     key_groups:
-      - age:
-          - *admin_mohamed
-          - *host_crazy
+      - age: [*admin_mohamed, *host_crazy]
+  - path_regex: secrets/users/mohamed\.yaml$
+    key_groups:
+      - age: [*admin_mohamed, *host_crazy, *ssh_mohamed]
+  - path_regex: secrets/users/koko\.yaml$
+    key_groups:
+      - age: [*admin_mohamed, *host_crazy, *age_koko, *ssh_koko]
+  - path_regex: secrets/users/kids\.yaml$
+    key_groups:
+      - age: [*admin_mohamed, *host_crazy, *age_kids, *ssh_kids]

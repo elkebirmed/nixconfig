@@ -31,6 +31,8 @@ in {
       (den.batteries.user-shell "fish")
       den.aspects.persisted-home
       den.aspects.fish
+      den.aspects.user-ssh-key
+      den.aspects.user-age-key
       den.aspects.sops-home
     ];
   };
