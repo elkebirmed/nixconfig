@@ -1,0 +1,13 @@
+# age keys: your personal key (age-keygen) + each host's SSH host key:
+#   ssh-to-age < /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub
+keys:
+  # Personal recovery key and host key are both able to decrypt shared secrets.
+  - &admin_mohamed age13hmp8kf8uf4e2q8x7dxlm96twrr7rss9ak800ky2hlrnrqrhcqfs66mr4u
+  - &host_crazy age1fysecxuj2kzncm0lewlusx6gd9m4us4tgqsps85g3x5e0mfpdccqqxjpt8
+# Encrypt the shared secret file to both recipients above.
+creation_rules:
+  - path_regex: secrets/common\.yaml$
+    key_groups:
+      - age:
+          - *admin_mohamed
+          - *host_crazy
