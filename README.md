@@ -8,8 +8,6 @@ Flake-parts + Den NixOS configuration for the `crazy` host.
 
 This repository is public. Encrypted SOPS files are safe to commit as long as **no private decryption keys are ever committed**.
 
-More details: https://github.com/elkebirmed/nixconfig
-
 ---
 
 ## Contents
