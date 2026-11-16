@@ -8,8 +8,6 @@ Flake-parts + Den NixOS configuration for the `crazy` host.
 
 This repository is public. Encrypted SOPS files are safe to commit as long as **no private decryption keys are ever committed**.
 
----
-
 ## Contents
 
 1. [Architecture](#1-architecture)
@@ -23,8 +21,6 @@ This repository is public. Encrypted SOPS files are safe to commit as long as **
 9. [Backup and recovery](#9-backup-and-recovery)
 10. [Adding users](#10-adding-users)
 11. [Rotating keys](#11-rotating-keys)
-
----
 
 ## 1. Architecture
 
@@ -45,8 +41,6 @@ This repository is public. Encrypted SOPS files are safe to commit as long as **
 | `/var/log` | System logs               | Persistent       |
 
 Only explicitly preserved data survives reboot (SSH host identity, user homes, SOPS age identity, user SSH keys, required system state). New application state must be added to the Impermanence configuration.
-
----
 
 ## 2. Secrets and keys
 
@@ -82,13 +76,9 @@ The host SSH key is converted to an age identity by SOPS-Nix; the admin age iden
 | User key       | Admin or host can recover the encrypted copy                    |
 | Both root keys | Secrets are unrecoverable unless another recipient exists       |
 
----
-
 ## 3. Repository structure
 
 Organized around Den and import-tree. The host config is `modules/hosts/crazy.nix`. The hardware config is named `_hardware-configuration.nix` so import-tree does not treat it as a standalone aspect.
-
----
 
 ## 4. Requirements
 
@@ -101,8 +91,6 @@ The Disko config targets `disk.device = "/dev/sda";`. **This disk will be destro
 ```bash
 lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE,MOUNTPOINTS
 ```
-
----
 
 ## 5. Installation
 
@@ -127,8 +115,6 @@ Enter the tools shell:
 ```bash
 nix develop
 ```
-
----
 
 ## 6. Key recovery and provisioning
 
@@ -262,8 +248,6 @@ git add .sops.yaml secrets
 git commit -m "Rotate keys and initialize secrets"
 ```
 
----
-
 ## 7. Install NixOS
 
 If the hardware differs, regenerate and stage the hardware config (flakes ignore untracked files):
@@ -290,8 +274,6 @@ cp -a /root/nixconfig /mnt/persist/home/mohamed/Projects/nixconfig
 reboot
 ```
 
----
-
 ## 8. First boot
 
 Log in as `mohamed` with the password stored in SOPS.
@@ -312,8 +294,6 @@ gh auth status                      # GitHub token is for Mohamed only
 
 ```
 
----
-
 ## 9. Backup and recovery
 
 Back up (offline, two separate locations, e.g. password manager or encrypted USB):
@@ -330,8 +310,6 @@ Never keep the only copy on the machine. Test backups by restoring to a temp dir
 
 **Both root keys lost:** generate new root and user keys, update `.sops.yaml`, recreate all secrets, verify, and install via Path B.
 
----
-
 ## 10. Adding users
 
 1. Create the user aspect including `den.aspects.user-ssh-key`, `den.aspects.sops-home`, and `den.aspects.user-age-key` (if an age identity is needed).
@@ -342,15 +320,11 @@ Never keep the only copy on the machine. Test backups by restoring to a temp dir
 
 Never authorize one user's key to decrypt another user's file.
 
----
-
 ## 11. Rotating keys
 
 **User SSH key / age identity:** generate a new key, update its recipient in `.sops.yaml`, replace the encrypted private key in the user's file, run `sops updatekeys`, verify host decryption, rebuild, and verify deployment.
 
 **Root key:** update the recipient policy and re-encrypt all affected files. Keep the old key until the new one and its backups are verified.
-
----
 
 ## License
 
