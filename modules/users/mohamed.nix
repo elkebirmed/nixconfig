@@ -21,7 +21,10 @@ in {
     nixos = {config, ...}: {
       # `neededForUsers` makes the encrypted hash available before account
       # creation; its path is assigned to the generated user entry.
-      sops.secrets."passwords/${user.userName}".neededForUsers = true;
+      sops.secrets."passwords/${user.userName}" = {
+        sopsFile = ../../secrets/users + "/${user.userName}.yaml";
+        neededForUsers = true;
+      };
       users.users.${user.userName}.hashedPasswordFile =
         config.sops.secrets."passwords/${user.userName}".path;
     };

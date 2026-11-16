@@ -1,8 +1,9 @@
 # ============================================================================
 # Secrets are decrypted at activation with the host's SSH ed25519 key
 # (`sops.age.sshKeyPaths` defaults to `services.openssh.hostKeys`).
-# Individual secrets are declared by the features that use them
-# (users.nix: passwords, git.nix: emails).
+# Secret files mirror the module tree: secrets/hosts/<host>.yaml and
+# secrets/users/<user>.yaml. Each consumer declares its own `sopsFile`
+# (hosts/*.nix: host secrets, users/*.nix: passwords, git.nix: emails).
 # ============================================================================
 {inputs, ...}: {
   # Add sops-nix input.
@@ -25,8 +26,6 @@
 
     nixos = {
       imports = [inputs.sops-nix.nixosModules.sops];
-
-      sops.defaultSopsFile = ../../secrets/common.yaml;
     };
   };
 }

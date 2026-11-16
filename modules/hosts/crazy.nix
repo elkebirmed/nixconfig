@@ -24,6 +24,9 @@
 
     nixos = {
       time.timeZone = "Africa/Algiers";
+
+      # Host-scoped secrets live next to the host definition.
+      sops.defaultSopsFile = ../../secrets/hosts/crazy.yaml;
     };
 
     nixos.imports = [./_hardware-configuration.nix];

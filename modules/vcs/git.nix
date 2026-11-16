@@ -7,7 +7,9 @@
   den.aspects.git = {user, ...}: {
     nixos = {config, ...}: {
       # Render the user's email secret to a Git-readable include file.
-      sops.secrets."email/${user.userName}" = {};
+      sops.secrets."email/${user.userName}" = {
+        sopsFile = ../../secrets/users + "/${user.userName}.yaml";
+      };
       sops.templates."git-${user.userName}" = {
         owner = user.userName;
         content = ''
