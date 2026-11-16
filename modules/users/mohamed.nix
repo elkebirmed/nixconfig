@@ -35,6 +35,7 @@ in {
       (den.batteries.user-shell "fish")
       den.aspects.persisted-home
       den.aspects.fish
+      den.aspects.gh
       den.aspects.nvf
       den.aspects.opencode
     ];
