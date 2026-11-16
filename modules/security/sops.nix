@@ -12,8 +12,11 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  # Decrypt secrets at activation and keep secret declarations with consumers.
-  den.aspects.sops = {user, ...}: {
+  # Host side: password hashes, host secrets (uses the SSH host key)
+  den.aspects.sops.nixos.imports = [inputs.sops-nix.nixosModules.sops];
+
+  # User side: secrets only this user needs (uses ~/.config/sops/age/keys.txt)
+  den.aspects.sops-home = {user, ...}: {
     homePersistence = {
       inherit (user) userName;
       directories = [
@@ -24,8 +27,12 @@
       ];
     };
 
-    nixos = {
-      imports = [inputs.sops-nix.nixosModules.sops];
+    homeManager = {config, ...}: {
+      imports = [inputs.sops-nix.homeManagerModules.sops];
+      sops = {
+        age.keyFile = "${config.xdg.configHome}/sops/age/keys.txt";
+        defaultSopsFile = ../../secrets/users + "/${user.userName}.yaml";
+      };
     };
   };
 }
