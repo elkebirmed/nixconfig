@@ -186,27 +186,27 @@ in {
         (pick "<leader>sS" "lsp_workspace_symbols" "LSP Workspace Symbols")
 
         # Snacks pickers
-        (n "<leader><space>" "Snacks.picker.files({ cwd = Root() })" "Find Files (Root Dir)")
+        (n "<leader><space>" "Snacks.picker.files({ hidden = true, cwd = Root() })" "Find Files (Root Dir)")
         (n "<leader>," "Snacks.picker.buffers()" "Buffers")
-        (n "<leader>/" "Snacks.picker.grep({ cwd = Root() })" "Grep (Root Dir)")
+        (n "<leader>/" "Snacks.picker.grep({ hidden = true, cwd = Root() })" "Grep (Root Dir)")
         (pick "<leader>:" "command_history" "Command History")
         (pick "<leader>n" "notifications" "Notification History")
 
         # Explorer
-        (n "<leader>e" "Snacks.explorer({ cwd = Root() })" "Explorer Snacks (root dir)")
-        (n "<leader>E" "Snacks.explorer()" "Explorer Snacks (cwd)")
-        (n "<leader>fe" "Snacks.explorer({ cwd = Root() })" "Explorer Snacks (root dir)")
-        (n "<leader>fE" "Snacks.explorer()" "Explorer Snacks (cwd)")
+        (n "<leader>e" "Snacks.explorer({ hidden = true })" "Explorer Snacks (cwd)")
+        (n "<leader>E" "Snacks.explorer({ hidden = true, cwd = Root() })" "Explorer Snacks (root dir)")
+        (n "<leader>fe" "Snacks.explorer({ hidden = true })" "Explorer Snacks (cwd)")
+        (n "<leader>fE" "Snacks.explorer({ hidden = true, cwd = Root() })" "Explorer Snacks (root dir)")
 
         # Find
         (pick "<leader>fb" "buffers" "Buffers")
         (n "<leader>fB" "Snacks.picker.buffers({ hidden = true, nofile = true })" "Buffers (all)")
-        (n "<leader>fc" "Snacks.picker.files({ cwd = vim.fn.stdpath('config') })" "Find Config File")
-        (n "<leader>ff" "Snacks.picker.files({ cwd = Root() })" "Find Files (Root Dir)")
+        (n "<leader>fc" "Snacks.picker.files({ hidden = true, cwd = vim.fn.stdpath('config') })" "Find Config File")
+        (n "<leader>ff" "Snacks.picker.files({ hidden = true, cwd = Root() })" "Find Files (Root Dir)")
         (pick "<leader>fF" "files" "Find Files (cwd)")
         (pick "<leader>fg" "git_files" "Find Files (git-files)")
         (pick "<leader>fr" "recent" "Recent")
-        (n "<leader>fR" "Snacks.picker.recent({ filter = { cwd = true } })" "Recent (cwd)")
+        (n "<leader>fR" "Snacks.picker.recent({ hidden = true, filter = { cwd = true } })" "Recent (cwd)")
         (pick "<leader>fp" "projects" "Projects")
 
         # Git
