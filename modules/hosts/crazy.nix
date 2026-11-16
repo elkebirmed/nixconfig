@@ -20,6 +20,7 @@
       den.aspects.git
       den.aspects.networking
       den.aspects.openssh
+      den.aspects.dev
     ];
 
     nixos = {
