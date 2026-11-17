@@ -21,6 +21,7 @@
       den.aspects.networking
       den.aspects.openssh
       den.aspects.dev
+      den.aspects.podman
     ];
 
     nixos = {
