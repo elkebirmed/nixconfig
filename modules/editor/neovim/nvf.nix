@@ -13,7 +13,12 @@
   };
 
   # Configure Neovim through nvf
-  den.aspects.nvf = {
+  den.aspects.nvf = {user, ...}: {
+    homePersistence = {
+      inherit (user) userName;
+      directories = [".local/state/nvf"];
+    };
+
     includes = [
       den.aspects.nvf.core
       den.aspects.nvf.treesitter

@@ -2,8 +2,13 @@
 # Opencode
 # ============================================================================
 _: {
-  den.aspects.opencode.homeManager = {
-    programs.opencode = {
+  den.aspects.opencode = {user, ...}: {
+    homePersistence = {
+      inherit (user) userName;
+      directories = [".local/state/opencode"];
+    };
+
+    homeManager.programs.opencode = {
       enable = true;
     };
   };
