@@ -25,6 +25,7 @@
       den.aspects.nvf.lsp
       den.aspects.nvf.languages
       den.aspects.nvf.completion
+      den.aspects.nvf.ai
       den.aspects.nvf.snacks
       den.aspects.nvf.plugins
       den.aspects.nvf.ui
@@ -33,7 +34,7 @@
       den.aspects.nvf.lua
     ];
 
-    homeManager = {
+    homeManager = {pkgs, ...}: {
       # NVF module
       imports = [inputs.nvf.homeModules.default];
 
@@ -46,6 +47,11 @@
         enable = true; # Enable NVF
         defaultEditor = true; # Make it the default editor
       };
+
+      home.packages = with pkgs; [
+        sqlfluff
+        tree-sitter
+      ];
     };
   };
 }

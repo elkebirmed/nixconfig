@@ -54,9 +54,14 @@ _: {
               };
             };
 
-            # SQL: vim-dadbod completion
             sources = {
-              per_filetype.sql = ["snippets" "dadbod" "buffer"];
+              default = lib.mkForce ["lsp" "path" "snippets" "buffer"];
+              per_filetype = {
+                sql = ["snippets" "dadbod" "buffer"];
+                codecompanion = ["codecompanion" "lsp" "path" "snippets" "buffer"];
+                codecompanion_chat_input = ["codecompanion" "lsp" "path" "snippets" "buffer"];
+                codecompanion_input = ["codecompanion" "lsp" "path" "snippets" "buffer"];
+              };
               providers.dadbod = {
                 name = "Dadbod";
                 module = "vim_dadbod_completion.blink";

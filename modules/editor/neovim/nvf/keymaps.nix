@@ -530,6 +530,13 @@ in {
         (n "<leader>tw" ''require("neotest").watch.toggle(vim.fn.expand("%"))'' "Toggle Watch")
         (n "<leader>td" ''require("neotest").run.run({ strategy = "dap" })'' "Debug Nearest")
 
+        # CodeCompanion
+        (raw ["n" "v"] "<leader>ac" "<cmd>CodeCompanionChat Toggle<cr>" "CodeCompanion Chat")
+        (raw ["n" "v"] "<leader>an" "<cmd>CodeCompanionChat<cr>" "New CodeCompanion Chat")
+        (raw "v" "<leader>ai" "<cmd>CodeCompanion<cr>" "CodeCompanion Inline")
+        (raw ["n" "v"] "<leader>ao" "<cmd>CodeCompanionActions<cr>" "CodeCompanion Actions")
+        (raw "v" "<leader>ae" "<cmd>CodeCompanionChat Add<cr>" "Add to CodeCompanion Chat")
+
         # Edgy
         (n "<leader>ue" ''require("edgy").toggle()'' "Edgy Toggle")
         (n "<leader>uE" ''require("edgy").select()'' "Edgy Select Window")

@@ -15,6 +15,11 @@
       openssh
       git
       jq
+      openssl
+      imagemagick
+      sqlite
+      file
+      ast-grep
     ];
   };
 }

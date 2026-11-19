@@ -8,62 +8,52 @@ _: {
       directories = [".local/state/opencode"];
     };
 
-    homeManager.programs.opencode = {
-      enable = true;
-      enableMcpIntegration = true;
-      mutableSettings = true;
-      cli.theme = "kanagawa";
+    homeManager = {osConfig, ...}: {
+      programs.opencode = {
+        enable = true;
+        enableMcpIntegration = true;
+        mutableSettings = true;
+        cli.theme = "kanagawa";
 
-      settings = {
-        "$schema" = "https://opencode.ai/config.json";
-        providers.omniroute = {
-          name = "OmniRoute";
-          npm = "@ai-sdk/openai-compatible";
-          options = {
-            baseURL = "http://localhost:20128/v1";
-            apiKey = "{env:OMNIROUTE_API_KEY}";
-          };
-          models = {
-            auto = {
-              name = "Auto";
-              limit = {
-                context = 128000;
-                output = 8192;
+        settings = {
+          "$schema" = "https://opencode.ai/config.json";
+
+          # Default to the free-only combo.
+          model = "omniroute/auto/coding:free";
+
+          providers = {
+            omniroute = {
+              name = "OmniRoute";
+              package = "@opencode/ai/providers/openai-compatible";
+              settings = {
+                baseURL = "http://localhost:20128/v1";
+                apiKey = "{file:/var/lib/omniroute-bootstrap/api-key}";
+              };
+              models = {
+                "auto/coding:free".name = "Auto Coding (Free)";
+                "auto/reasoning:free".name = "Auto Reasoning (Free)";
+                "auto/vision:free".name = "Auto Vision (Free)";
+                "auto/chat:free".name = "Auto Chat (Free)";
+                "auto/best-free".name = "Auto Best (Free)";
               };
             };
-            "auto/coding" = {
-              name = "Auto Coding";
-              limit = {
-                context = 128000;
-                output = 8192;
+
+            # Command Code's Provider API is OpenAI-compatible for non-Claude
+            # models. The key stays in SOPS and is read by OpenCode at runtime.
+            cmdc = {
+              name = "Command Code";
+              package = "@opencode/ai/providers/openai-compatible";
+              settings = {
+                baseURL = "https://api.commandcode.ai/provider/v1";
+                apiKey = "{file:${osConfig.sops.secrets."cmdc/api-key".path or "/run/secrets/cmdc/api-key"}}";
               };
-            };
-            "auto/fast" = {
-              name = "Auto Fast";
-              limit = {
-                context = 128000;
-                output = 8192;
-              };
-            };
-            "auto/cheap" = {
-              name = "Auto Cheap";
-              limit = {
-                context = 128000;
-                output = 8192;
-              };
-            };
-            "auto/reasoning" = {
-              name = "Auto Reasoning";
-              limit = {
-                context = 128000;
-                output = 8192;
-              };
-            };
-            "auto/vision" = {
-              name = "Auto Vision";
-              limit = {
-                context = 128000;
-                output = 8192;
+              models = {
+                "deepseek/deepseek-v4.1-flash".name = "DeepSeek V4.1 Flash";
+                "deepseek/deepseek-v4.1-flash-fast".name = "DeepSeek V4.1 Flash Fast";
+                "Qwen/Qwen3.8-Max".name = "Qwen 3.8 Max";
+                "google/gemini-3.8-flash".name = "Gemini 3.8 Flash";
+                "gpt-6.2-astra".name = "GPT-6.2 Astra";
+                "z-ai/glm-5.3-flashx".name = "GLM-5.3 FlashX";
               };
             };
           };
