@@ -78,7 +78,36 @@ The host SSH key is converted to an age identity by SOPS-Nix; the admin age iden
 
 ## 3. Repository structure
 
-Organized around Den and import-tree. The host config is `modules/hosts/crazy.nix`. The hardware config is named `_hardware-configuration.nix` so import-tree does not treat it as a standalone aspect.
+Organized around Den and import-tree, with flake wiring kept separate from reusable aspects:
+
+```text
+modules/
+├── flake/                  # flake-parts outputs: devshell, nh, treefmt, vm
+├── den/                    # den wiring: defaults, dendritic, host declarations
+├── hosts/
+│   ├── crazy.nix
+│   └── crazy/_nixos/hardware-configuration.nix
+├── users/                  # one file per user
+└── aspects/                # reusable features, one aspect per file
+    ├── ai/                 # commandcode, omniroute, opencode
+    ├── editor/neovim/      # nvf + sub-aspects
+    ├── network/            # networking, openssh
+    ├── security/           # sops
+    ├── shell/              # fish
+    ├── storage/            # btrfs-rollback, disko-btrfs, impermanence
+    ├── system/             # boot, locale, maintenance, nix-daemon, zram
+    ├── virtualisation/     # podman
+    ├── vcs/                # gh, git
+    └── dev-tools.nix
+```
+
+Naming rules:
+
+- One aspect per file; aspect files are named after the aspect (`den.aspects.sops` → `aspects/security/sops.nix`).
+- Directories group domains, not aspects; use singular domain names (`network`, `storage`, `system`).
+- `<entity>.nix` plus `<entity>/` for internals (`hosts/crazy.nix` + `hosts/crazy/`).
+- Generated files and class-scoped directories are `_`-prefixed so import-tree ignores them (`_nixos/`).
+- kebab-case filenames, lowercase directories, no repeated path segments.
 
 ## 4. Requirements
 
@@ -253,8 +282,8 @@ git commit -m "Rotate keys and initialize secrets"
 If the hardware differs, regenerate and stage the hardware config (flakes ignore untracked files):
 
 ```bash
-nixos-generate-config --no-filesystems --show-hardware-config > modules/hosts/_hardware-configuration.nix
-git add modules/hosts/_hardware-configuration.nix
+nixos-generate-config --no-filesystems --show-hardware-config > modules/hosts/crazy/_nixos/hardware-configuration.nix
+git add modules/hosts/crazy/_nixos/hardware-configuration.nix
 ```
 
 Safety check: the host key must decrypt Mohamed's hash (typically starts with `$y$`). **If it fails, do not install.**

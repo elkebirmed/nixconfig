@@ -1,4 +1,9 @@
-# age keys
+# ============================================================================
+# SOPS
+# Age recipients and creation rules for the encrypted secrets.
+# ============================================================================
+
+# Age recipients.
 keys:
   # Personal recovery key and host key are both able to decrypt shared secrets.
   - &admin_mohamed age13hmp8kf8uf4e2q8x7dxlm96twrr7rss9ak800ky2hlrnrqrhcqfs66mr4u

@@ -1,5 +1,6 @@
 # ============================================================================
-# Kids's user aspect
+# Kids User
+# The kids account: profile, secrets, and included aspects.
 # ============================================================================
 {den, ...}: let
   fullName = "Kids";
@@ -9,7 +10,7 @@ in {
       # Account information
       description = fullName;
 
-      # SSH authorized keys for Mohamed's account.
+      # SSH authorized keys for the kids account.
       openssh.authorizedKeys.keys = [];
     };
 
@@ -26,6 +27,7 @@ in {
         config.sops.secrets."passwords/${user.userName}".path;
     };
 
+    # Aspects every login pulls in.
     includes = [
       den.batteries.define-user
       (den.batteries.user-shell "fish")

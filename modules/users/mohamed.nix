@@ -1,5 +1,6 @@
 # ============================================================================
-# Mohamed's user aspect
+# Mohamed User
+# The mohamed account: profile, secrets, and included aspects.
 # ============================================================================
 {den, ...}: let
   fullName = "Mohamed Elkebir";
@@ -29,6 +30,7 @@ in {
         config.sops.secrets."passwords/${user.userName}".path;
     };
 
+    # Aspects every login pulls in.
     includes = [
       den.batteries.define-user
       den.batteries.primary-user
