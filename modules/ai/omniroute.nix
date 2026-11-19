@@ -2,7 +2,11 @@
 # OmniRoute
 # ============================================================================
 _: {
-  den.aspects.omniroute = {
+  den.aspects.omniroute = {user, ...}: let
+    # AI credentials live in the owning user's SOPS file so a host rebuild only
+    # needs that user's secrets unlocked.
+    sopsFile = ../../secrets/users + "/${user.userName}.yaml";
+  in {
     provides.to-hosts.nixos = {
       config,
       lib,
@@ -77,11 +81,11 @@ _: {
       ];
 
       sops.secrets =
-        lib.genAttrs providerSecretNames (_: {})
+        lib.genAttrs providerSecretNames (_: {inherit sopsFile;})
         // {
-          "omniroute/jwt-secret" = {};
-          "omniroute/api-key-secret" = {};
-          "omniroute/admin-password" = {};
+          "omniroute/jwt-secret" = {inherit sopsFile;};
+          "omniroute/api-key-secret" = {inherit sopsFile;};
+          "omniroute/admin-password" = {inherit sopsFile;};
         };
 
       sops.templates."omniroute.env".content = ''

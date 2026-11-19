@@ -17,6 +17,7 @@
     # Own the shared credential used by both the CLI and the OpenCode provider.
     provides.to-hosts.nixos = _: {
       sops.secrets."cmdc/api-key" = {
+        sopsFile = ../../secrets/users + "/${user.userName}.yaml";
         owner = user.userName;
         mode = "0400";
       };
