@@ -37,6 +37,17 @@ in {
       (den.batteries.user-shell "fish")
       den.aspects.persisted-home
       den.aspects.fish
+      den.aspects.completions
+      den.aspects.bat
+      den.aspects.fd
+      den.aspects.ripgrep
+      den.aspects.lsd
+      den.aspects.fzf
+      den.aspects.yazi
+      den.aspects.tuios
+      den.aspects.kitty
+      den.aspects.kanata
+      den.aspects.maple-mono
       den.aspects.user-ssh-key
       den.aspects.sops-home
       den.aspects.gh

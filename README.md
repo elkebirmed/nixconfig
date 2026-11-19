@@ -90,12 +90,16 @@ modules/
 ├── users/                  # one file per user
 └── aspects/                # reusable features, one aspect per file
     ├── ai/                 # commandcode, omniroute, opencode
+    ├── cli/                # bat, fd, fzf, lsd, ripgrep, tuios, yazi
     ├── editor/neovim/      # nvf + sub-aspects
+    ├── fonts/              # maple-mono
+    ├── input/              # kanata
     ├── network/            # networking, openssh
     ├── security/           # sops
-    ├── shell/              # fish
+    ├── shell/              # completions, fish
     ├── storage/            # btrfs-rollback, disko-btrfs, impermanence
     ├── system/             # boot, locale, maintenance, nix-daemon, zram
+    ├── terminal/           # kitty
     ├── virtualisation/     # podman
     ├── vcs/                # gh, git
     └── dev-tools.nix
