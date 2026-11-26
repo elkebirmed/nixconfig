@@ -91,3 +91,56 @@ Restrictions that matter:
   `agent model: <provider>/<model>` after changing `defaultModel`.
 - Provider API access requires GOAT, Pro, Max or Team — or a **Go plan with
   credits**. A Go plan with no credits returns `403 upgrade_required`.
+
+## Token use
+
+Every turn re-sends the whole conversation, so the recurring cost is
+`turns × context size`, not `turns × message length`. Measured on this gateway
+before any tuning: **23.3M tokens over 281 requests in a day (~83k per
+request)**, on a session 1d9h old and 89k of 128k full, against an **~11k
+floor** for a fresh session. A turn's cost therefore grew from 40k to 102k over
+twelve messages in one session.
+
+Three things drive that, and all three are configured here:
+
+**1. Session length (the big one).** Cost grows linearly with turns, because
+the prompt grows linearly. A task-scoped session — `/new` per task, not one
+eternal chat — starts at the floor. Memory files survive a reset, so nothing
+durable is lost. This is a usage habit, not a setting.
+
+**2. Context pruning** — `agents.defaults.contextPruning` in
+`modules/aspects/server/openclaw.nix`. Upstream leaves pruning **off** for
+non-Anthropic providers, and old tool results (exec output, file reads) were
+what filled the context. `mode = "cache-ttl"` with `ttl = "10m"` soft-trims and
+then hard-clears old tool results, keeping a stable projection between rounds so
+the provider prompt cache still hits.
+
+Pruning on a custom route requires `compat.supportsPromptCacheKey = true` on the
+model entries; without it upstream installs no cache-TTL job and the block is
+silently inert. That flag and `compat.supportsUsageInStreaming` were verified
+against this endpoint — `prompt_cache_key` is accepted (HTTP 200) and repeating
+a 12k-token prompt returned `cached_tokens: 11904`.
+
+**3. Compaction** — `agents.defaults.compaction`. Both halves of a compaction
+are replayed on later turns, so both are a recurring cost. `keepRecentTokens`
+(8000, upstream 20000) shortens the verbatim tail; `maxSummaryChars` (6000,
+upstream 16000) caps the summary; `thinkingLevel = "off"` stops paying reasoning
+tokens for a summary; `model` runs summarisation on the fast model, since
+summary quality is bounded by the transcript, not model depth.
+
+Tool schemas are also re-sent every request, so `tools.deny` drops the ones this
+deployment cannot use at all — node/desktop tools with no paired device, media
+generation, meeting capture, speech. Nothing used for chat, files, exec, memory
+or publishing is denied.
+
+### What not to change
+
+- **Do not raise the context window.** A larger window means each turn carries
+  _more_ tokens before compaction. The model advertises 1M, the gateway caps it
+  at 128k and compacts at ~113k; that cap is a cost control, not a limitation.
+- **Do not disable compaction.** It looks like overhead, but without it prompts
+  overflow and are retried whole — which costs more than the summary.
+- **Do not `sleep`-poll `exec`.** Wakeups triggered this way re-send the entire
+  context to read one line of output; on the measured day they accounted for
+  **28% of all usage** (5 turns, 388k tokens, ~78k average). Use a single
+  blocking command with `yieldMs`, or take the result at turn end.

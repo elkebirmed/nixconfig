@@ -104,6 +104,17 @@ in {
                           default = commandcode.model,
                           choices = commandcode.models,
                         },
+                        -- Cap the completion explicitly. Every adapter inherits
+                        -- the upstream default here, and an uncapped reply is
+                        -- both slower and billed; 2048 is enough for a chat
+                        -- turn or an inline edit.
+                        max_tokens = {
+                          order = 2,
+                          mapping = "parameters",
+                          type = "integer",
+                          default = 2048,
+                          desc = "Maximum tokens to generate in the reply.",
+                        },
                       },
                     })
                   end,
