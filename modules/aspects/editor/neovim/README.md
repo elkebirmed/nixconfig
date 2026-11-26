@@ -23,7 +23,7 @@ included by the `mohamed` user only (`modules/users/mohamed.nix`); `koko` and
 | `nvf/languages.nix`  | Per-language support, formatters (conform), linters (nvim-lint).                     |
 | `nvf/treesitter.nix` | Parsers, highlighting, indent, folding, treesitter-context.                          |
 | `nvf/completion.nix` | blink.cmp sources, cmdline completion, snippets.                                     |
-| `nvf/ai.nix`         | OmniRoute helper, CodeCompanion, Minuet ghost text.                                  |
+| `nvf/ai.nix`         | Command Code provider helper, CodeCompanion, Minuet ghost text.                      |
 | `nvf/snacks.nix`     | Snacks dashboard/picker/explorer/notifier and friends.                               |
 | `nvf/ui.nix`         | Lualine, bufferline, mini.\*, Flash, Aerial, DAP, Noice, WhichKey.                   |
 | `nvf/plugins.nix`    | Plugins wired directly through `extraPlugins`.                                       |
@@ -126,22 +126,26 @@ names missing from nixpkgs are skipped instead of failing the build.
 - Command-line completion is on with a `cmdline` preset and ghost text, menus
   only open for `:` — search `/` is left alone.
 
-## AI (OmniRoute)
+## AI (Command Code)
 
-`ai.nix` defines a shared `require("omniroute")` helper pointed at the local
-gateway on `127.0.0.1:20128`, reading its key from
-`/var/lib/omniroute-bootstrap/api-key` on every call (so rotated keys need no
-restart). Free auto-routed models: `auto/coding:free`, `auto/reasoning:free`,
-`auto/vision:free`, `auto/chat:free`, `auto/best-free`.
+`ai.nix` defines a shared `require("commandcode")` helper pointed at the
+Command Code Provider API (`https://api.commandcode.ai/provider`), reading its
+key from the SOPS-backed `cmdc/api-key` on every call (so rotated keys need no
+restart). There is no local gateway container — requests go straight out over
+HTTPS. Models come from `modules/aspects/ai/_commandcode-lib.nix`, where every
+ID has been verified as available on this account's plan; the default chat model
+is `deepseek/deepseek-v4.1-flash` and inline completion uses
+`deepseek/deepseek-v4.1-flash-fast`.
 
-- **CodeCompanion** uses OmniRoute for chat and inline interactions.
+- **CodeCompanion** uses Command Code for chat and inline interactions.
 - **Minuet** provides inline ghost-text completion with small, infrequent
   requests (`request_timeout = 4`, `throttle = 1500`). Accept line with `<A-a>`,
   accept all with `<A-A>`, dismiss `<A-e>`, cycle `<A-p>`/`<A-n>`.
   A seeded `FileType`/`BufEnter` autocmd makes the first buffer auto-trigger,
   since Minuet's own hook lands after `InsertEnter`.
 
-Requires the `omniroute` aspect/gateway to be running.
+Needs a Command Code API key with **Provider API access** (GOAT, Pro, Max,
+Team; or a Go plan with credits). No local service to run.
 
 ## Snacks
 

@@ -27,9 +27,6 @@ _: {
     backupPaths = [
       # OpenClaw workspace/sessions (assistant state).
       "/home/claw/.openclaw"
-      # OmniRoute gateway data and the generated gateway key.
-      "/var/lib/omniroute"
-      "/var/lib/omniroute-bootstrap"
       # Monitoring state.
       "/var/lib/grafana"
       "/var/lib/prometheus"

@@ -1,34 +1,50 @@
 # ============================================================================
 # NVF AI
-# Shared OmniRoute helper plus CodeCompanion and Minuet integrations.
+# Command Code Provider API helper plus CodeCompanion and Minuet integrations.
+#
+# This used to talk to OmniRoute, a local gateway container; there is no local
+# service to run now, so there is no bootstrap key file to wait on either.
 # ============================================================================
-_: {
+let
+  cc = import ../../../ai/_commandcode-lib.nix;
+
+  # Model IDs are sent verbatim to the API, so `choices` is a list of ids.
+  modelIds = map (m: m.id) cc.models;
+in {
   den.aspects.nvf.ai = {
     homeManager = {
       lib,
       pkgs,
+      osConfig,
       ...
-    }: {
+    }: let
+      # The key stays in SOPS; it is read at call time, so a rotated key takes
+      # effect without restarting Neovim.
+      apiKeyPath =
+        osConfig.sops.secrets."cmdc/api-key".path
+        or "/run/secrets/cmdc/api-key";
+    in {
       programs.nvf.settings.vim = {
-        # Shared OmniRoute helper, available to every plugin via
-        # `require("omniroute")`.
-        luaConfigRC.omniroute = ''
-          -- Local OmniRoute gateway (free auto-routed models).
-          package.preload["omniroute"] = function()
-            local base_url = "http://127.0.0.1:20128"
+        # Shared helper, available to every plugin via require("commandcode").
+        luaConfigRC.commandcode = ''
+          package.preload["commandcode"] = function()
+            local provider_root = "${cc.providerRoot}"
+            local key_path = "${apiKeyPath}"
 
             local M = {
-              -- Gateway base URL without /v1; CodeCompanion's adapter appends
+              -- Root without /v1: CodeCompanion's adapter appends
               -- /v1/chat/completions itself.
-              base_url = base_url,
-              -- OpenAI-compatible base URL, including /v1.
+              base_url = provider_root,
+              -- Full base including /v1, for clients that append only
+              -- /chat/completions (Minuet).
               url = function()
-                return base_url .. "/v1"
+                return provider_root .. "/v1"
               end,
-              -- Read the gateway key on every call so rotated keys are picked
-              -- up without restarting Neovim.
+              key_path = key_path,
+              -- Read the key from SOPS on every call so rotated keys are
+              -- picked up without restarting Neovim.
               api_key = function()
-                local f = io.open("/var/lib/omniroute-bootstrap/api-key", "r")
+                local f = io.open(key_path, "r")
                 if not f then
                   return nil
                 end
@@ -36,15 +52,11 @@ _: {
                 f:close()
                 return key
               end,
-              model = "auto/coding:free",
+              model = "${cc.defaultModel}",
+              completion_model = "${cc.fastModel}",
               models = {
-                "auto/coding:free",
-                "auto/reasoning:free",
-                "auto/vision:free",
-                "auto/chat:free",
-                "auto/best-free",
+                "${lib.concatStringsSep "\",\n                \"" modelIds}"
               },
-              completion_model = "auto/coding:free",
             }
 
             return M
@@ -70,27 +82,27 @@ _: {
           })
         '';
 
-        # AI agent backed by OmniRoute's free auto-routed models.
+        # AI agent backed by the Command Code Provider API.
         assistant.codecompanion-nvim = {
           enable = true;
           setupOpts = {
             adapters = lib.generators.mkLuaInline ''
               {
                 http = {
-                  omniroute = function()
-                    local omniroute = require("omniroute")
+                  commandcode = function()
+                    local commandcode = require("commandcode")
                     return require("codecompanion.adapters").extend("openai_compatible", {
-                      formatted_name = "OmniRoute",
+                      formatted_name = "Command Code",
                       env = {
-                        -- Base URL without /v1; the adapter appends
+                        -- Base without /v1; the adapter appends
                         -- /v1/chat/completions.
-                        url = omniroute.base_url,
-                        api_key = "file:/var/lib/omniroute-bootstrap/api-key",
+                        url = commandcode.base_url,
+                        api_key = "file:" .. commandcode.key_path,
                       },
                       schema = {
                         model = {
-                          default = omniroute.model,
-                          choices = omniroute.models,
+                          default = commandcode.model,
+                          choices = commandcode.models,
                         },
                       },
                     })
@@ -99,8 +111,8 @@ _: {
               }
             '';
             interactions = {
-              chat.adapter = "omniroute";
-              inline.adapter = "omniroute";
+              chat.adapter = "commandcode";
+              inline.adapter = "commandcode";
             };
           };
         };
@@ -112,7 +124,7 @@ _: {
           event = "InsertEnter";
           setupOpts = {
             provider = "openai_compatible";
-            # Free keyless routing is slow; keep requests small and infrequent.
+            # Inline completion wants low latency: small, infrequent requests.
             request_timeout = 4;
             throttle = 1500;
             debounce = 600;
@@ -120,10 +132,10 @@ _: {
             notify = "warn";
             provider_options = {
               openai_compatible = {
-                api_key = lib.generators.mkLuaInline ''function() return require("omniroute").api_key() end'';
-                end_point = lib.generators.mkLuaInline ''require("omniroute").url() .. "/chat/completions"'';
-                model = lib.generators.mkLuaInline ''require("omniroute").completion_model'';
-                name = "OmniRoute";
+                api_key = lib.generators.mkLuaInline ''function() return require("commandcode").api_key() end'';
+                end_point = lib.generators.mkLuaInline ''require("commandcode").url() .. "/chat/completions"'';
+                model = lib.generators.mkLuaInline ''require("commandcode").completion_model'';
+                name = "Command Code";
                 stream = true;
                 optional = {
                   max_tokens = 128;

@@ -8,7 +8,7 @@ _: {
     programs.nix-ld.enable = true;
 
     # The Podman module owns the prune unit; only its schedule is set here.
-    # Do not pass `--all`: it can delete the pinned OmniRoute image while its
+    # Do not pass `--all`: it can delete a pinned application image while its
     # container is stopped mid-switch. Dangling images and unused volumes are
     # still reclaimed.
     virtualisation.podman.autoPrune = {

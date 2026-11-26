@@ -103,7 +103,7 @@ modules/
 │   └── crazy/_nixos/hardware-configuration.nix
 ├── users/                  # one file per user
 └── aspects/                # reusable features, one aspect per file
-    ├── ai/                 # commandcode, omniroute, opencode
+    ├── ai/                 # commandcode, opencode
     ├── cli/                # bat, fd, fzf, lsd, ripgrep, tuios, yazi
     ├── desktop/            # apps, cache, display-manager, niri(+base/pro/simple),
     │                       # noctalia(+pro/simple), polkit-keyring, theming, desktop
@@ -475,10 +475,14 @@ and no failover.
                         │   Caddy   │  only public ingress, TLS via DNS-01
                         └─────┬─────┘
              tailnet guard: not remote_ip 100.64.0.0/10 fd7a:...
-                    ┌─────────┼──────────┬───────────┐
-             127.0.0.1:20128    :3000     :9090     :18789
-              OmniRoute        Grafana   Prometheus  OpenClaw
-              (Quadlet)                              (user service)
+                    ┌─────────┼─────────┐
+               127.0.0.1:3000   :9090     :18789
+                Grafana    Prometheus   OpenClaw
+                                             │
+                                             │ HTTPS (Bearer key from SOPS)
+                                             ▼
+                                  Command Code Provider API
+                                        (external)
 
   SSH: port 22 only on tailscale0 — never on the public interface.
 ```
@@ -544,10 +548,10 @@ nix build .#nixosConfigurations.vps.config.system.build.toplevel --no-link
 
 # Then switch over the tailnet. `restartIfChanged = false` on tailscaled keeps
 # the tunnel (and this SSH session) up across the switch.
-sudo nixos-rebuild switch --flake .#vps \
+nixos-rebuild switch --flake .#vps \
   --target-host ops@VPS_SSH_ALIAS \
   --build-host ops@VPS_SSH_ALIAS \
-  --use-remote-sudo
+  --elevate=sudo
 ```
 
 Kernel and initrd changes are **not** applied by `switch`. Use
@@ -568,7 +572,9 @@ Rules for every container:
   `MemoryMax`/`CPUQuota`.
 - One explicit persistent data directory per stateful app.
 
-OmniRoute (`modules/aspects/ai/_omniroute-lib.nix`) is the reference example.
+No container runs on the VPS today — do not add one just to have an example.
+`den.aspects.private-app` (`modules/aspects/server/private-app.nix`) is the
+declared container path and carries this hardening baseline.
 
 ### Private application images
 
@@ -614,8 +620,41 @@ OpenClaw is an **assistant**, not an operator. It runs as `claw` with:
   inet/inet6/unix.
 
 Residual risk (not a control we have): the gateway needs **outbound** HTTPS for
-OmniRoute and Telegram, so egress is broad. It cannot be restricted to Telegram
-CIDRs without pinning them, which would be brittle.
+the Command Code Provider API and Telegram, so egress is broad. It cannot be
+restricted to those endpoints without pinning IPs, which would be brittle.
+There is no local model gateway any more: models are reached over HTTPS with a
+Bearer key from SOPS (`cmdc/api-key`, host-scoped).
+
+### Models (Command Code)
+
+All model access — OpenClaw, OpenCode, and Neovim — goes through the Command
+Code Provider API. There is no local gateway container.
+
+| Consumer                      | Client               | Base used                    | Key source                |
+| ----------------------------- | -------------------- | ---------------------------- | ------------------------- |
+| OpenClaw                      | `openai-completions` | `…/provider/v1`              | host `cmdc/api-key` → env |
+| OpenCode                      | `openai-compatible`  | `…/provider/v1`              | desktop `cmdc/api-key`    |
+| Neovim (CodeCompanion/Minuet) | `openai_compatible`  | `…/provider` (appends `/v1`) | desktop `cmdc/api-key`    |
+
+The base URL, default model, and model list live in one place:
+`modules/aspects/ai/_commandcode-lib.nix`. Each model ID there was verified to
+return **HTTP 200** against this account, not merely present in the catalog.
+
+Restrictions that matter:
+
+- The catalog and **plan access** are different things. The catalog lists
+  everything Command Code sells; a model outside your plan returns
+  `403 MODEL_NOT_IN_PLAN` (every GPT model and `gemini-4-carbon` do on GOAT).
+  Only IDs that actually returned 200 are listed — re-probe if the plan changes.
+- Only models advertising `/chat/completions` are listed. **Claude models are
+  `/messages`-only** — sending one to `/chat/completions` returns a 400, so they
+  are deliberately excluded from this OpenAI-shaped integration.
+- Every remaining ID is vendor-prefixed (`deepseek/…`, `Qwen/…`), so
+  `provider/model` must be parsed on the **first** slash only (model becomes
+  `deepseek/deepseek-v4.1-flash`). Confirm the gateway log line
+  `agent model: <provider>/<model>` after changing `defaultModel`.
+- Provider API access requires GOAT, Pro, Max or Team — or a **Go plan with
+  credits**. A Go plan with no credits returns `403 upgrade_required`.
 
 ### Monitoring
 
@@ -645,8 +684,8 @@ restic-appdata snapshots
 restic-appdata restore latest --target /var/tmp/restore-test
 
 # 3. Verify the important trees exist and are non-empty.
-du -sh /var/tmp/restore-test/var/lib/omniroute
 du -sh /var/tmp/restore-test/home/claw/.openclaw
+du -sh /var/tmp/restore-test/var/lib/grafana
 
 # 4. Remove the scratch copy.
 rm -rf /var/tmp/restore-test
@@ -662,15 +701,13 @@ Everything under `/` survives. The `systemPersistence` entry in
 only matters on `crazy`. Each stateful service still declares its data directory
 explicitly so ownership is correct on a fresh install:
 
-| Service       | Path                           | Owner         |
-| ------------- | ------------------------------ | ------------- |
-| OmniRoute     | `/var/lib/omniroute`           | `10001:10001` |
-| OmniRoute key | `/var/lib/omniroute-bootstrap` | `claw`        |
-| OpenClaw      | `/home/claw/.openclaw`         | `claw`        |
-| Prometheus    | `/var/lib/prometheus`          | `prometheus`  |
-| Grafana       | `/var/lib/grafana`             | `grafana`     |
-| Tailscale     | `/var/lib/tailscale`           | root          |
-| private apps  | `/var/lib/<app>`               | per app       |
+| Service      | Path                   | Owner        |
+| ------------ | ---------------------- | ------------ |
+| OpenClaw     | `/home/claw/.openclaw` | `claw`       |
+| Prometheus   | `/var/lib/prometheus`  | `prometheus` |
+| Grafana      | `/var/lib/grafana`     | `grafana`    |
+| Tailscale    | `/var/lib/tailscale`   | root         |
+| private apps | `/var/lib/<app>`       | per app      |
 
 ### DNS as code
 
@@ -699,20 +736,21 @@ public, and never `apply` without owner approval.
 These secret **names** must exist in `secrets/hosts/vps.yaml` before the features
 that use them are enabled. Do not paste values anywhere; add them with `sops`.
 
-| Secret                    | Used by            | Notes                                    |
-| ------------------------- | ------------------ | ---------------------------------------- |
-| `web-domain`              | Caddy, Grafana     | Base domain (placeholder in source).     |
-| `acme-email`              | Caddy              | ACME contact address.                    |
-| `tailscale-auth-key`      | Tailscale          | Already present.                         |
-| `cloudflare-api-token`    | Caddy DNS-01       | Separate from the OpenTofu token.        |
-| `openclaw-gateway-token`  | OpenClaw           | Already present.                         |
-| `openclaw-telegram-token` | OpenClaw           | Already present.                         |
-| `grafana-admin-password`  | Grafana            |                                          |
-| `grafana-secret-key`      | Grafana            | Random hex, e.g. `openssl rand -hex 32`. |
-| `git-email`               | `ops` git identity | Host-scoped, not a user file.            |
-| `restic-password`         | Backups            | Enables the backup job.                  |
-| `restic-repository`       | Backups            | Private destination.                     |
-| `omniroute/*`             | OmniRoute          | Already present.                         |
+| Secret                    | Used by            | Notes                                                                 |
+| ------------------------- | ------------------ | --------------------------------------------------------------------- |
+| `web-domain`              | Caddy, Grafana     | Base domain (placeholder in source).                                  |
+| `acme-email`              | Caddy              | ACME contact address.                                                 |
+| `tailscale-auth-key`      | Tailscale          | Already present.                                                      |
+| `cloudflare-api-token`    | Caddy DNS-01       | Separate from the OpenTofu token.                                     |
+| `openclaw-gateway-token`  | OpenClaw           | Already present.                                                      |
+| `openclaw-telegram-token` | OpenClaw           | Already present.                                                      |
+| `grafana-admin-password`  | Grafana            |                                                                       |
+| `grafana-secret-key`      | Grafana            | Random hex, e.g. `openssl rand -hex 32`.                              |
+| `git-email`               | `ops` git identity | Host-scoped, not a user file.                                         |
+| `restic-password`         | Backups            | Enables the backup job.                                               |
+| `restic-repository`       | Backups            | Private destination.                                                  |
+| `cmdc/api-key`            | Command Code       | Host-scoped, for OpenClaw; desktop keeps its own in `secrets/users/`. |
+| `omniroute/*`             | —                  | Legacy, unused since OmniRoute was removed; safe to prune.            |
 
 Manual steps:
 

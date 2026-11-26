@@ -1,7 +1,8 @@
 # ============================================================================
 # VPS Host
 # OVH VPS-1: BIOS boot, a single ext4 disk, public web, and a private
-# tailnet. OpenClaw and OmniRoute stay on loopback.
+# tailnet. OpenClaw stays on loopback and talks to the Command Code Provider
+# API over HTTPS; there is no local model gateway.
 # ============================================================================
 {den, ...}: {
   den.hosts.x86_64-linux.vps = {
@@ -37,7 +38,6 @@
       den.aspects.tailscale
       den.aspects.web
       den.aspects.site-example
-      den.aspects.omniroute-vps
       # Container platform: Quadlet is the single declarative container path.
       den.aspects.quadlet
       # Runtime-only Quadlet units for applications with private images.

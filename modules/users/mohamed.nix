@@ -61,7 +61,6 @@ in {
       den.aspects.nvf
       den.aspects.opencode
       den.aspects.commandcode
-      den.aspects.omniroute
     ];
   };
 }
