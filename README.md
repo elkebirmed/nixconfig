@@ -615,8 +615,12 @@ OpenClaw is an **assistant**, not an operator. It runs as `claw` with:
   because the OpenClaw bundle ships the launcher, not `gh`; `git` is needed by
   the publication path;
 - no host terminal (`gateway.terminal.enabled = false`; upstream defaults it on);
-- no browser control UI (`gateway.controlUi.enabled = false`), which also keeps a
-  hostname out of the generated config;
+- the browser control UI is **enabled**, which is required: every path except
+  `/health(z)` returns 404 otherwise. It therefore _does_ carry a hostname — but
+  not in the Nix store. The store copy holds only `enabled = true`;
+  `allowedOrigins` is injected from a SOPS-rendered file by the
+  `openclaw-patch-control-ui` pre-start hook. `gateway.reload.mode = "off"` makes
+  a restart mandatory, so a rebuild can never silently drop the origin;
 - uploads disabled, no Podman/Nix socket, no SOPS identity, no SSH key, no host
   deployment credentials;
 - a hardened systemd user unit: empty `CapabilityBoundingSet`,

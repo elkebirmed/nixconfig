@@ -19,9 +19,21 @@
 _: {
   den.aspects.monitoring.nixos = {
     config,
+    lib,
     ...
   }: let
     listen = "127.0.0.1";
+
+    # Grafana builds absolute links and login redirects from `root_url`, so it
+    # must match the host Caddy actually serves it on. Deriving it from the
+    # site definition instead of spelling a hostname here keeps the two from
+    # drifting apart. `host` holds the Caddy placeholder rather than a real
+    # domain, so swap in the SOPS placeholder: the URL is only rendered into
+    # /run at activation and never reaches the store.
+    grafanaRootUrl =
+      "https://"
+      + lib.replaceStrings ["{$WEB_DOMAIN}"] [config.sops.placeholder."web-domain"]
+      config.web.sites.grafana.host;
   in {
     services.prometheus = {
       enable = true;
@@ -71,8 +83,12 @@ _: {
           # redirects. The value embeds the real domain, so it is supplied from
           # the runtime environment instead of being written here.
           root_url = "$__env{GF_SERVER_ROOT_URL}";
-          # Reject requests whose Host header does not match the expected
-          # domain (mitigates DNS rebinding once the domain is known at runtime).
+          # Left off deliberately. `enforce_domain` rejects requests whose Host
+          # header does not match `root_url`, which would be useful against DNS
+          # rebinding, but it is not the control guarding this instance: Caddy
+          # already refuses anything outside the tailnet before the request
+          # reaches Grafana (see `web.sites.grafana.access`). Turning it on is a
+          # separate hardening decision, not something to enable silently here.
           enforce_domain = false;
         };
 
@@ -124,7 +140,7 @@ _: {
       content = ''
         GF_SECURITY_ADMIN_PASSWORD=${config.sops.placeholder."grafana-admin-password"}
         GF_SECURITY_SECRET_KEY=${config.sops.placeholder."grafana-secret-key"}
-        GF_SERVER_ROOT_URL=https://metrics.${config.sops.placeholder."web-domain"}
+        GF_SERVER_ROOT_URL=${grafanaRootUrl}
       '';
       # Grafana reads its environment once at start.
       restartUnits = ["grafana.service"];
