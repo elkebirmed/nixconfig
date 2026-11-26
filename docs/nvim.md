@@ -9,11 +9,15 @@ nothing is hand-edited inside `~/.config/nvim`.
 - `defaultEditor = true`, so `$EDITOR`/`$VISUAL` point at Neovim.
 - Undo history and Neovim state persist to `~/.local/state/nvf`.
 
-Apply with your usual flake rebuild (see the root `README.md`). The aspect is
-included by the `mohamed` user only (`modules/users/mohamed.nix`); `koko` and
+Part of the [nixconfig](../README.md) documentation.
+
+Apply with your usual flake rebuild (see the root [`README.md`](../README.md)). The
+aspect is included by the `mohamed` user only (`modules/users/mohamed.nix`); `koko` and
 `kids` do not load Neovim.
 
 ## File map
+
+Paths are relative to `modules/aspects/editor/neovim/`:
 
 | File                 | Purpose                                                                              |
 | -------------------- | ------------------------------------------------------------------------------------ |

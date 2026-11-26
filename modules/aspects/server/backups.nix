@@ -7,12 +7,12 @@
 #     files (`/run/restic/*`). Neither the destination nor the password is ever a
 #     Nix store literal, and the destination is an infrastructure identifier.
 #   * Disabled by default. Enabling a backup before the owner provides the
-#     secret names in README "Owner actions" would create a timer that fails
+#     secret names in docs/vps.md "Owner actions" would create a timer that fails
 #     every night, so activation stays inert until then.
 #   * Container image storage is deliberately excluded: images are re-pulled
 #     from pinned digests, so backing them up wastes the small disk.
-#   * A backup that has never been restore-tested is not a backup. The README
-#     documents the restore drill; this module only schedules and prunes.
+#   * A backup that has never been restore-tested is not a backup. See
+#     docs/vps.md for the restore drill; this module only schedules and prunes.
 # ============================================================================
 _: {
   den.aspects.backups.nixos = {

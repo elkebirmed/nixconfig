@@ -11,7 +11,7 @@
 # boundary: the address is needed by systemd-networkd at boot, before SOPS has
 # decrypted anything, so it cannot be rendered into /run at activation time.
 # Supply the real values locally (or from a private overlay) and never commit
-# them. See README "Network address handling".
+# them. See docs/vps.md "Network address handling".
 # ============================================================================
 _: {
   den.schema.host = {lib, ...}: {
