@@ -12,7 +12,7 @@
 # pair plus a repository-scoped GitHub token, granted solely so the built-in
 # `github_publish` tool can push branches and open/update pull requests; see
 # the notes on `runtimePackages` and `GH_TOKEN` below.
-# See the README "OpenClaw boundary" section before relaxing any of this.
+# See docs/openclaw.md before relaxing any of this.
 # ============================================================================
 {inputs, ...}: {
   # Pin the official module. nix-openclaw follows this flake's nixpkgs and

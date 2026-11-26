@@ -22,7 +22,8 @@
 # Every ID below therefore contains a slash. That is unavoidable here — every
 # model on this plan is vendor-prefixed — so the `provider/model` split is
 # expected to take only the first segment (leaving `deepseek/...` as the model).
-# See README "Models (Command Code)" for where to confirm this after a change.
+# See docs/openclaw.md "Models (Command Code)" for where to confirm this after a
+# change.
 # ============================================================================
 {
   # Provider root. Clients that append `/v1/chat/completions` themselves (the
