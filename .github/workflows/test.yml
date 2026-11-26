@@ -1,0 +1,70 @@
+# ============================================================================
+# CI
+# Formatting, flake output checks, and a full build of the `crazy` host on
+# pushes and pull requests. Actions are pinned to commit SHAs.
+# ============================================================================
+on:
+  pull_request:
+  push:
+  schedule:
+    # Weekly lock refresh so the build does not rot between commits.
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Format, check, and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+      - uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+
+      - name: Show flake metadata
+        run: nix flake metadata
+
+      - name: Check formatting
+        run: nix fmt -- --fail-on-change
+
+      - name: Ensure flake.nix is regenerated
+        run: |
+          nix run .#write-flake
+          if ! git diff --exit-code; then
+            echo "::error::nix run .#write-flake changed files; commit the regenerated flake"
+            exit 1
+          fi
+
+      - name: Flake check
+        run: nix flake check
+
+      - name: Build the crazy toplevel
+        run: nix build .#nixosConfigurations.crazy.config.system.build.toplevel --no-link
+
+      - name: Build the vps toplevel
+        run: nix build .#nixosConfigurations.vps.config.system.build.toplevel --no-link
+
+  update-lock:
+    name: Update flake.lock
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+      - uses: DeterminateSystems/update-flake-lock@da03c0f078bc4b2c37ee4f7e072d34bf8f188bb3 # v29
+        with:
+          pr-title: "flake.lock: weekly update"
+          pr-labels: dependencies

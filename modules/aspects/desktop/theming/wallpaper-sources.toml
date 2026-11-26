@@ -1,0 +1,25 @@
+# ~/.config/noctalia/wallpaper-sources.toml
+# =============================================================================
+# Optional map of palette name -> wallpaper directory.
+#
+
+# Optional map of palette name -> wallpaper directory.
+#
+# When an entry exists for a palette, `noctalia-theme` uses that directory
+# as the wallpaper source for the palette instead of searching
+# $NOCTALIA_WALLPAPER_DIR/<Palette>/... .
+#
+# Paths support $HOME, $XDG_CONFIG_HOME and $XDG_CACHE_HOME expansion.
+# This file is optional: palettes not listed here fall back to the default
+# layout under $NOCTALIA_WALLPAPER_DIR (default: ~/Pictures/Wallpapers).
+#
+# Example:
+#   [wallpaper.sources]
+#   Gruvbox = "$HOME/Pictures/Wallpapers/Gruvbox"
+#   Everforest = "$HOME/Pictures/Wallpapers/Everforest/Dark"
+
+[wallpaper.sources]
+"Gruvbox Material" = "$HOME/Pictures/Wallpapers/Gruvbox"
+"Nord Aurora" = "$HOME/Pictures/Wallpapers/Nord"
+"Rose Pine Moon" = "$HOME/Pictures/Wallpapers/Rose Pine"
+"Tokyo Night Storm" = "$HOME/Pictures/Wallpapers/Tokyo Night"

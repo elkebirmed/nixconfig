@@ -1,0 +1,21 @@
+// ~/.config/noctalia/templates/niri-colors.kdl
+// =============================================================================
+// Noctalia template: niri colors generated from the active palette.
+//
+
+layout {
+    background-color "{{colors.background.default.hex}}"
+
+    focus-ring {
+        active-color "{{colors.primary.default.hex}}"
+        inactive-color "{{colors.surface_variant.default.hex}}"
+    }
+
+    shadow {
+        color "{{colors.shadow.default.hex}}"
+    }
+}
+
+overview {
+    backdrop-color "{{colors.background.default.hex}}"
+}

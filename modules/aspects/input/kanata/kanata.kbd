@@ -1,0 +1,218 @@
+;; ===========================================================================
+;; KANATA
+;; https://github.com/jtroo/kanata/blob/main/docs/config.adoc
+;; ===========================================================================
+
+(defcfg
+  linux-dev ("/dev/input/by-path/platform-i8042-serio-0-event-kbd")
+
+  process-unmapped-keys yes
+  log-layer-changes no
+  concurrent-tap-hold yes
+  sequence-timeout 1000
+  sequence-input-mode hidden-suppressed
+)
+
+;; ===========================================================================
+;; VARIABLES
+;; ===========================================================================
+
+(defvar
+  tap-time 200
+  hold-time 200
+  left-keys  (q w e r t a s d f g z x c v b)
+  right-keys (y u i o p h j k l ; n m , . / ')
+)
+
+;; ===========================================================================
+;; VIRTUAL KEYS
+;; ===========================================================================
+
+(defvirtualkeys
+  ;; Git
+  git-push      (macro g i t spc p u s h)
+  git-pull      (macro g i t spc p u l l)
+  git-status    (macro g i t spc s t a t u s)
+  git-diff      (macro g i t spc d i f f)
+  git-add       (macro g i t spc a d d spc .)
+  git-commit    (macro g i t spc c o m m i t)
+  git-commit-m  (macro g i t spc c o m m i t spc - m spc)
+  git-log       (macro g i t spc l o g)
+
+  ;; Nix
+  nix-switch   (macro n h spc o s spc s w i t c h)
+  nix-boot     (macro n h spc o s spc b o o t)
+  nix-update   (macro n i x spc f l a k e spc u p d a t e)
+  nix-develop  (macro n i x spc d e v e l o p)
+  nix-gc       (macro s u d o spc n i x - c o l l e c t - g a r b a g e spc - d)
+  sops-edit    (macro s o p s spc s e c r e t s / u s e r s / m o h a m e d . y a m l)
+
+  ;; Systemctl (system)
+  sys-status  (macro s y s t e m c t l spc s t a t u s)
+  sys-start   (macro s y s t e m c t l spc s t a r t spc)
+  sys-stop    (macro s y s t e m c t l spc s t o p spc)
+  sys-restart (macro s y s t e m c t l spc r e s t a r t spc)
+  sys-enable  (macro s y s t e m c t l spc e n a b l e spc)
+  sys-disable (macro s y s t e m c t l spc d i s a b l e spc)
+
+  ;; Systemctl (user)
+  usr-status  (macro s y s t e m c t l spc - - u s e r spc s t a t u s)
+  usr-start   (macro s y s t e m c t l spc - - u s e r spc s t a r t spc)
+  usr-stop    (macro s y s t e m c t l spc - - u s e r spc s t o p spc)
+  usr-restart (macro s y s t e m c t l spc - - u s e r spc r e s t a r t spc)
+  usr-enable  (macro s y s t e m c t l spc - - u s e r spc e n a b l e spc)
+  usr-disable (macro s y s t e m c t l spc - - u s e r spc d i s a b l e spc)
+
+  ;; Rust / Cargo
+  cargo-build  (macro c a r g o spc b u i l d)
+  cargo-run    (macro c a r g o spc r u n)
+  cargo-test   (macro c a r g o spc t e s t)
+  cargo-check  (macro c a r g o spc c h e c k)
+  cargo-update (macro c a r g o spc u p d a t e)
+)
+
+;; ===========================================================================
+;; SEQUENCES
+;; ===========================================================================
+
+(defseq
+  ;; Git
+  git-push      (g p)
+  git-pull      (g l)
+  git-status    (g s)
+  git-diff      (g d)
+  git-add       (g a)
+  git-commit    (g c)
+  git-commit-m  (g m)
+  git-log       (g o)
+
+  ;; Nix
+  nix-switch   (x s)
+  nix-boot     (x b)
+  nix-update   (x u)
+  nix-develop  (x d)
+  nix-gc       (x g)
+  sops-edit    (x e)
+
+  ;; Systemctl (system)
+  sys-status  (s s)
+  sys-start   (s t)
+  sys-stop    (s o)
+  sys-restart (s r)
+  sys-enable  (s e)
+  sys-disable (s d)
+
+  ;; Systemctl (user)
+  usr-status  (u s)
+  usr-start   (u t)
+  usr-stop    (u o)
+  usr-restart (u r)
+  usr-enable  (u e)
+  usr-disable (u d)
+
+  ;; Rust / Cargo
+  cargo-build  (r b)
+  cargo-run    (r n)
+  cargo-test   (r t)
+  cargo-check  (r c)
+  cargo-update (r u)
+)
+
+;; ===========================================================================
+;; ALIASES
+;; ===========================================================================
+
+(defalias
+  ;; Modifier keys
+  lctl (tap-hold-release-keys $tap-time $hold-time a lctl $right-keys)
+  lsft (tap-hold-release-keys $tap-time $hold-time s lsft $right-keys)
+  lalt (tap-hold-release-keys $tap-time $hold-time d lalt $right-keys)
+  lmet (tap-hold-release-keys $tap-time $hold-time f lmet $right-keys)
+
+  rmet (tap-hold-release-keys $tap-time $hold-time j rmet $left-keys)
+  ralt (tap-hold-release-keys $tap-time $hold-time k ralt $left-keys)
+  rsft (tap-hold-release-keys $tap-time $hold-time l rsft $left-keys)
+  rctl (tap-hold-release-keys $tap-time $hold-time ; rctl $left-keys)
+
+  lms (tap-hold-release-keys $tap-time $hold-time r (multi lmet lsft) $left-keys)
+  lmc (tap-hold-release-keys $tap-time $hold-time e (multi lmet lctl) $left-keys)
+  lma (tap-hold-release-keys $tap-time $hold-time w (multi lmet lalt) $left-keys)
+
+  rms (tap-hold-release-keys $tap-time $hold-time u (multi rmet rsft) $right-keys)
+  rmc (tap-hold-release-keys $tap-time $hold-time i (multi rmet rctl) $right-keys)
+  rma (tap-hold-release-keys $tap-time $hold-time o (multi rmet ralt) $right-keys)
+
+  ;; layers
+  nav (tap-hold-press $tap-time $hold-time spc (layer-toggle nav))
+  scnd (tap-hold-press $tap-time $hold-time esc (layer-toggle scnd))
+
+  lsnp (tap-hold-press $tap-time $hold-time v sldr)
+  rsnp (tap-hold-press $tap-time $hold-time n sldr)
+
+  cw (caps-word 2000)
+)
+
+;; ===========================================================================
+;; SOURCE
+;; ===========================================================================
+
+(defsrc
+  esc     f1      f2      f3      f4      f5      f6      f7      f8      f9      f10     f11     f12  ins del
+  grv     1       2       3       4       5       6       7       8       9       0       -       =       bspc
+  tab     q       w       e       r       t       y       u       i       o       p       [       ]       \
+  caps    a       s       d       f       g       h       j       k       l       ;       '       ret
+  lsft    z       x       c       v       b       n       m       ,       .       /       ▲       rsft
+  lctl   fn     lmet   lalt       spc        ralt   comp   rctl                     ◀     ▼     ▶
+)
+
+;; (deflayer template
+;;   ;;      a       s       d       f       g       h       j       k       l       ;       '
+;;   _       _       _       _       _       _       _       _       _       _       _       _       _   _   _
+;;   _       _       _       _       _       _       _       _       _       _       _       _       _       _
+;;   _       _       _       _       _       _       _       _       _       _       _       _       _       _
+;;   _       _       _       _       _       _       _       _       _       _       _       _       _
+;;   _       _       _       _       _       _       _       _       _       _       _       _       _
+;;   _      _      _      _          _          _      _      _                        _     _      _
+;; )
+
+;; ===========================================================================
+;; MAIN LAYER
+;; ===========================================================================
+
+(deflayer main
+  ;;      a       s       d       f       g       h       j       k       l       ;       '
+  esc     f1      f2      f3      f4      f5      f6      f7      f8      f9      f10     f11     f12  ins del
+  grv     1       2       3       4       5       6       7       8       9       0       -       =       bspc
+  tab     q       @lma    @lmc    @lms    t       y       @rms    @rmc    @rma     p       [       ]       \
+  @scnd   @lctl   @lsft   @lalt   @lmet   g       h       @rmet   @ralt   @rsft   @rctl   '       ret
+  lsft    z       x       c       @lsnp   b       @rsnp   m       ,       .       /       ▲       rsft
+  lctl   fn     lmet   lalt       @nav      ralt    comp   rctl                     ◀     ▼     ▶
+)
+
+;; ===========================================================================
+;; NAVIGATION LAYER
+;; ===========================================================================
+
+(deflayer nav
+  ;;      a       s       d       f       g       h       j       k       l       ;       '
+  _       _       _       _       _       _       _       _       _       _       _       _       _   _   _
+  _       _       _       _       _       _       _       _       _       _       _       _       _       _
+  _       _       _       _       _       _       _       ret     bspc    del     _       _       _       _
+  _       _       _       _       _       _       ◀       ▼       ▲       ▶       _       _       _
+  _       _       _       _       _       _       home    pgdn    pgup    end     _       _       _
+  _      _      _      _          _          _      _      _                        _     _      _
+)
+
+;; ===========================================================================
+;; SECONDARY LAYER
+;; ===========================================================================
+
+(deflayer scnd
+  ;;      a       s       d       f       g       h       j       k       l       ;       '
+  _       _       _       _       _       _       _       _       _       _       _       _       _   _   _
+  _       _       _       _       _       _       _       _       _       _       _       _       _       _
+  _       @cw     lrld    _       _       _       _       _       _       _       _       _       _       _
+  _       -       _       _       _       _       _       _       _       _       _       _       _
+  _       _       _       _       _       _       _       _       _       _       _       _       _
+  _      _      _      _          -          _      _      _                        _     _      _
+)

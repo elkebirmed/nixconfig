@@ -1,0 +1,10 @@
+# ~/.config/noctalia/templates/starship.toml
+# =============================================================================
+# Noctalia template: starship prompt config generated from the active palette.
+#
+
+add_newline = false
+
+[character]
+success_symbol = "[>](bold fg:{{colors.primary.default.hex}})"
+error_symbol = "[>](bold fg:{{colors.error.default.hex}})"

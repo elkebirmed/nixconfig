@@ -1,0 +1,35 @@
+# ============================================================================
+# Git Ignore
+# Build results, local tooling state, and key material.
+# ============================================================================
+# Nix build output symlink and generated result links.
+result
+result-*
+
+# AI agent state.
+.commandcode/
+
+# Root-level age-encrypted files and SSH private/public keys.
+/*age.txt
+/*-ssh
+/*-ssh.pub
+
+# ============================================================================
+# DNS as code (OpenTofu)
+# State contains real zone names, record names, and addresses in clear text.
+# It must live outside the repository or in an ignored, encrypted location.
+# ============================================================================
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+# NOTE: .terraform.lock.hcl is intentionally NOT ignored. It pins provider
+# checksums for reproducibility and contains no secrets.
+
+# Private operator-side inventory and local overrides. Never committed: these
+# hold deployment targets, domains, and image references.
+secrets.local/
+inventory/
+
