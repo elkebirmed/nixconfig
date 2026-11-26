@@ -609,15 +609,42 @@ OpenClaw is an **assistant**, not an operator. It runs as `claw` with:
 
 - no shell toolchain — `programs.openclaw.toolNames = []` removes the upstream
   default `git`/`curl`/`jq`/`python3`/`node`/`pnpm` PATH;
+- one narrow, gateway-runtime-only exception: `gh` and `git` are in
+  `programs.openclaw.runtimePackages`, which nix-openclaw prepends to the
+  gateway wrapper PATH only — the login shell PATH is unchanged. `gh` is needed
+  because the OpenClaw bundle ships the launcher, not `gh`; `git` is needed by
+  the publication path;
 - no host terminal (`gateway.terminal.enabled = false`; upstream defaults it on);
 - no browser control UI (`gateway.controlUi.enabled = false`), which also keeps a
   hostname out of the generated config;
-- uploads disabled, no runtime packages, no Podman/Nix socket, no SOPS identity,
-  no SSH key, no deployment credentials;
+- uploads disabled, no Podman/Nix socket, no SOPS identity, no SSH key, no host
+  deployment credentials;
 - a hardened systemd user unit: empty `CapabilityBoundingSet`,
   `SystemCallFilter=@system-service`, `ProtectSystem=strict`,
   `ProtectHome=read-only`, `NoNewPrivileges`, `RestrictAddressFamilies` limited to
   inet/inet6/unix.
+
+#### GitHub publishing
+
+The gateway can push branches and open/update pull requests through OpenClaw's
+built-in `github_publish` tool. That is the only reason it holds any credential:
+
+- `programs.openclaw.environment.GH_TOKEN` points at
+  `/run/secrets/openclaw-github-token`, a host-scoped SOPS secret in
+  `secrets/hosts/vps.yaml` (owner `claw`, mode `0400`). The VPS host key
+  decrypts it, so `claw` needs no age key and no `secrets/users/claw.yaml`.
+- Identity is **native**: a `GH_TOKEN` in the gateway process takes precedence
+  over any `gh` keyring, so no `gh` profile directory is created and nothing is
+  written outside `~/.openclaw`.
+- `tools.github` is deliberately unset. A managed identity means an OAuth
+  profile with its own private credential store, and
+  `kind: "app-installation"` cannot publish — upstream restricts App
+  installations to foreground session reads.
+
+Scope the token to the repositories the assistant may publish to (fine-grained
+PAT, Contents + Pull requests: write, or a classic PAT with `repo`). It is not a
+host credential: it confers no shell on the VPS and no access to any secret or
+service outside those repositories.
 
 Residual risk (not a control we have): the gateway needs **outbound** HTTPS for
 the Command Code Provider API and Telegram, so egress is broad. It cannot be

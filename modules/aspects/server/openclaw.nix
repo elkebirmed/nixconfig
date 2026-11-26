@@ -7,7 +7,11 @@
 #
 # Security boundary: this is an assistant, not an operator. It gets no shell
 # toolchain (the upstream default PATH includes git/curl/jq/python3), no host
-# terminal, no container or Nix socket, no sudo, and no deployment credentials.
+# terminal, no container or Nix socket, no sudo, and no host deployment
+# credentials. The one deliberate exception is a gateway-runtime `gh`/`git`
+# pair plus a repository-scoped GitHub token, granted solely so the built-in
+# `github_publish` tool can push branches and open/update pull requests; see
+# the notes on `runtimePackages` and `GH_TOKEN` below.
 # See the README "OpenClaw boundary" section before relaxing any of this.
 # ============================================================================
 {inputs, ...}: {
@@ -101,9 +105,10 @@
         # Deny the upstream toolchain entirely. Its default set is
         # nodejs/pnpm/git/curl/jq/python3/ffmpeg/sox/ripgrep plus helper CLIs,
         # which would give the assistant an execution and network path into
-        # the host and the tailnet. `toolNames = []` empties the wrapper PATH;
-        # the explicit excludes are belt-and-braces if upstream reintroduces a
-        # default. Extra packages are never added at runtime.
+        # the host and the tailnet. `toolNames = []` empties the built-in
+        # toolset; the explicit excludes are belt-and-braces if upstream
+        # reintroduces a default. This only filters the built-in set — the
+        # explicit `runtimePackages` below is what the gateway actually gets.
         toolNames = [];
         excludeTools = [
           "nodejs_24"
@@ -121,7 +126,26 @@
           "camsnap"
           "sonoscli"
         ];
-        runtimePackages = [];
+        # Deliberate, minimal exception to the "no toolchain" rule below.
+        #
+        # nix-openclaw prepends `runtimePackages` to the wrapper PATH only
+        # (`runtimePath = lib.makeBinPath runtimePackages` in
+        # `nix/modules/home-manager/openclaw/instance.nix`), so these binaries
+        # are reachable from the gateway process and nowhere else — the login
+        # shell PATH is untouched. They are also NOT subject to `toolNames` /
+        # `excludeTools`, which only filter the upstream built-in tool set.
+        #
+        #   gh  — required by the GitHub identity and exec path. The OpenClaw
+        #         bundle ships the launcher, not `gh`, and upstream's docs are
+        #         explicit: "GitHub CLI must be installed on the worker host;
+        #         the bundle includes the launcher, not `gh`."
+        #   git — required by the publication path that commits and pushes the
+        #         session branch.
+        #
+        # Both were in the upstream default tool set that this module denies,
+        # so re-adding them here is the narrow, auditable way to grant exactly
+        # what GitHub publishing needs.
+        runtimePackages = [pkgs.gh pkgs.git];
 
         instances.default = {
           enable = true;
@@ -136,6 +160,24 @@
           # nix-openclaw's env wrapper reads a path-valued entry as a file, so
           # this resolves to the key itself at start, never in the store.
           CMDC_API_KEY = "/run/secrets/cmdc/api-key";
+
+          # Native GitHub identity for `gh` inside the gateway.
+          #
+          # Upstream resolves GitHub identity as: `GH_TOKEN` or `GITHUB_TOKEN`
+          # from the gateway process first, then the runtime user's `gh`
+          # keyring/config. A native `GH_TOKEN` therefore takes precedence over
+          # any keyring, so no `gh` profile directory is needed, no
+          # `gh auth login` state is written, and nothing lands outside
+          # `~/.openclaw`. `tools.github` is left unset on purpose: setting it
+          # would mean a managed OAuth profile with its own private credential
+          # store. `kind: "app-installation"` is not an option either — upstream
+          # restricts App installations to foreground session reads and they
+          # cannot publish ("Existing publication, background, and shell
+          # execution paths do not acquire App tokens").
+          #
+          # Same path-valued convention as above: the wrapper substitutes the
+          # file contents at start, so the token is never in the Nix store.
+          GH_TOKEN = "/run/secrets/openclaw-github-token";
         };
 
         workspace.bootstrapFiles = {
@@ -321,6 +363,20 @@
       };
 
       sops.secrets."openclaw-telegram-token" = {
+        sopsFile = ../../../secrets/hosts/vps.yaml;
+        owner = user.userName;
+        mode = "0400";
+      };
+
+      # GitHub token for `programs.openclaw.environment.GH_TOKEN`. Host-scoped
+      # like the gateway token above: the VPS host key decrypts it, so `claw`
+      # needs no age key and no secrets/users/claw.yaml. The gateway reads only
+      # the path; the value is substituted into its process environment at
+      # start and never enters the Nix store.
+      #
+      # The key must exist in secrets/hosts/vps.yaml before activation, or
+      # sops-nix fails the rebuild.
+      sops.secrets."openclaw-github-token" = {
         sopsFile = ../../../secrets/hosts/vps.yaml;
         owner = user.userName;
         mode = "0400";
