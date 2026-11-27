@@ -20,6 +20,7 @@ This repository is public. Encrypted SOPS files are safe to commit as long as **
 | [`docs/vps.md`](docs/vps.md)                     | The server: trust boundaries, deploys, containers, monitoring, recovery. |
 | [`docs/openclaw.md`](docs/openclaw.md)           | The assistant on the VPS: sandbox boundary, GitHub publishing, models.   |
 | [`docs/nvim.md`](docs/nvim.md)                   | Neovim via nvf: plugins, LSP, languages, keymaps.                        |
+| [`docs/web-resources.md`](docs/web-resources.md) | Every external host the config reaches, grouped by purpose.              |
 | [`infra/dns/README.md`](infra/dns/README.md)     | Cloudflare DNS as OpenTofu, decoupled from deploys.                      |
 
 `docs/vps.md` and `docs/openclaw.md` describe the server; everything else applies to both hosts unless a section says otherwise.
