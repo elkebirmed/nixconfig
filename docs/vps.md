@@ -58,6 +58,26 @@ The desktop host `crazy` and the server host `vps` share only generic aspects
 `openclaw`) are included from `modules/hosts/vps.nix` only. Adding a server
 aspect to `crazy` is a bug, not a convenience.
 
+## Served hostnames
+
+Every site is an explicit `web.sites.<name>` entry. The `*.{$WEB_DOMAIN}` block
+in the generated Caddyfile is a catch-all that ends in `abort` — unknown
+subdomains get nothing, so a new site is never picked up implicitly.
+
+| Site                     | Backend               | `access`  |
+| ------------------------ | --------------------- | --------- |
+| `{$WEB_DOMAIN}` (apex)   | static `example-site` | `public`  |
+| `openclaw.{$WEB_DOMAIN}` | `127.0.0.1:18789`     | `tailnet` |
+| `grafana.{$WEB_DOMAIN}`  | `127.0.0.1:3000`      | `tailnet` |
+| `metrics.{$WEB_DOMAIN}`  | `127.0.0.1:9090`      | `tailnet` |
+
+Sources: `modules/sites/example.nix` (apex), `modules/aspects/server/openclaw.nix`,
+and `modules/aspects/server/monitoring.nix` (grafana, metrics). The `private-app`
+aspect adds an `app-<name>` site per configured app; none are defined today.
+
+Add a site by declaring `web.sites.<name>` in the aspect that owns the service,
+not by relying on the wildcard.
+
 ## Network address handling
 
 The static WAN IPv6 address and its gateway are infrastructure identifiers and
@@ -217,6 +237,36 @@ lives outside the repository. See `infra/dns/README.md`.
 
 `tofu fmt -check` and `tofu validate` are safe. Never paste plan output anywhere
 public, and never `apply` without owner approval.
+
+### Which record list a name belongs in
+
+A site's `access` decides its record list. There is no automatic link between
+the two, so this is the one place where a mistake is possible:
+
+| `web.sites.<name>.access` | Record list       | Proxy     |
+| ------------------------- | ----------------- | --------- |
+| `public`                  | `public_records`  | allowed   |
+| `tailnet` (the default)   | `tailnet_records` | forbidden |
+
+`tailnet_records` forces `proxied = false` in `infra/dns/main.tf`, so the
+provider will not let you proxy one. The failure mode is the reverse: putting a
+tailnet-only name in `public_records` with `proxied = true`.
+
+That case produces **HTTP 520 from Cloudflare** and looks like a broken service,
+but the service is fine. A proxied record terminates the connection at
+Cloudflare, so Caddy sees a Cloudflare address instead of the tailnet one, and
+the `remote_ip` guard aborts the request. The guard is working exactly as
+intended; the record is what is wrong.
+
+Diagnose it with one command against each name:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://<name>.<domain>/
+```
+
+520 on a tailnet site means the record is proxied. Fix the record, not the
+Caddyfile. Names reachable only over the tailnet gain nothing from public DNS,
+so an alternative is to drop such records entirely and resolve them by IP.
 
 ## Rollback and recovery
 

@@ -15,6 +15,9 @@ Everything that identifies the infrastructure lives in variables, not in source:
 | Public record names / addresses  | `TF_VAR_public_records` (JSON)                     |
 | Tailnet record names / addresses | `TF_VAR_tailnet_records` (JSON)                    |
 
+Which list a site belongs in is decided by its `access` in the NixOS config;
+see `docs/vps.md` → "Which record list a name belongs in".
+
 `sensitive = true` hides these from CLI output and plan diffs. It does **not**
 encrypt state — the state file contains them in clear text.
 
@@ -43,7 +46,14 @@ tofu -chdir=infra/dns apply -state="$TF_STATE"     # requires owner approval
 
 - **Tailnet-only names** → `tailnet_records`, always **DNS-only (grey cloud)**.
   A proxied record hides the client IP and breaks Caddy's `remote_ip` guard.
+  `main.tf` forces `proxied = false` here, so this list cannot be misconfigured
+  in the wrong direction — but a tailnet name placed in `public_records` with
+  `proxied = true` returns **HTTP 520** and looks like a broken service. It is
+  not: the guard is doing its job. Move the record to `tailnet_records`.
 - **Public names** → `public_records`. Proxying is fine; Caddy uses DNS-01.
+- The choice follows `web.sites.<name>.access` in the NixOS config (`public` →
+  `public_records`, `tailnet` → `tailnet_records`). Nothing enforces that link
+  across the two directories, so check it when adding a site.
 - Create the record **before** deploying the site that uses it.
 
 ## Token scope
