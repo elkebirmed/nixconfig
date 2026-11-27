@@ -17,10 +17,11 @@ This repository is public. Encrypted SOPS files are safe to commit as long as **
 | [`docs/install.md`](docs/install.md)             | Requirements, disko, key recovery, `nixos-install`, first boot.          |
 | [`docs/security.md`](docs/security.md)           | Root keys, SOPS recipient policy, backups, adding users, key rotation.   |
 | [`docs/configuration.md`](docs/configuration.md) | Module layout, desktop profiles, theming, git and the shell.             |
+| [`docs/deploy.md`](docs/deploy.md)               | Build, switch, rollback, and what a deploy does not cover.               |
 | [`docs/vps.md`](docs/vps.md)                     | The server: trust boundaries, deploys, containers, monitoring, recovery. |
 | [`docs/openclaw.md`](docs/openclaw.md)           | The assistant on the VPS: sandbox boundary, GitHub publishing, models.   |
 | [`docs/nvim.md`](docs/nvim.md)                   | Neovim via nvf: plugins, LSP, languages, keymaps.                        |
-| [`docs/web-resources.md`](docs/web-resources.md) | Every external host the config reaches, grouped by purpose.              |
+| [`docs/web-resources.md`](docs/web-resources.md) | Where the Nix lives, plus every external host the config reaches.        |
 | [`infra/dns/README.md`](infra/dns/README.md)     | Cloudflare DNS as OpenTofu, decoupled from deploys.                      |
 
 `docs/vps.md` and `docs/openclaw.md` describe the server; everything else applies to both hosts unless a section says otherwise.

@@ -54,6 +54,13 @@ DOMAIN_ALLOW = {
     "google.com", "googleapis.com", "api.telegram.org", "nixos-cn.org",
     "niri-epireyn.cachix.org", "noctalia.cachix.org",
     "registry.opentofu.org", "registry.terraform.io",
+    # Public Nix project infrastructure cited in the docs. These belong here for
+    # the same reason `nixos.org` does: they name an upstream project, not the
+    # owner. Subdomains are NOT covered by the parent entry (the match is
+    # exact), so each one that appears in prose must be listed separately.
+    "search.nixos.org", "cache.nixos.org", "status.nixos.org",
+    "discourse.nixos.org", "releases.nixos.org", "channels.nixos.org",
+    "noogle.dev", "mynixos.com", "zero-to-nix.com", "git.lix.systems",
 }
 
 # Tailscale's documented CGNAT IPv6 range is a structural constant, not an
