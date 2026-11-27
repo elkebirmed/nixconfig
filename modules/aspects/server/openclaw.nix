@@ -208,6 +208,34 @@
         };
 
         config = {
+          # Every enabled tool contributes its JSON schema to every request,
+          # and tool schemas sit in the cached prefix of the prompt. Denying a
+          # tool this deployment cannot use removes it from the catalog (and
+          # from the model's choices) permanently. Only tools that require a
+          # capability the VPS genuinely lacks are denied here — nothing that
+          # the assistant uses for chat, files, exec, memory, or publishing.
+          tools.deny = [
+            # No paired macOS/desktop node is enrolled; these act on one.
+            "canvas"
+            "screen"
+            "computer"
+            "mobile_ui"
+            "node_inference"
+            "dir_fetch"
+            "dir_list"
+            "file_fetch"
+            "file_write"
+            # Media generation and meeting capture: no queue, no recorder.
+            "image_generate"
+            "music_generate"
+            "video_generate"
+            "transcripts"
+            # Text chat over Telegram only; speech and rich UI panels unused.
+            "tts"
+            "talk_voice"
+            "show_widget"
+          ];
+
           gateway = {
             mode = "local";
             bind = "loopback";
@@ -286,7 +314,32 @@
                 provider = "default";
                 id = "CMDC_API_KEY";
               };
-              inherit (cc) models;
+              # `cc.models` is a catalog shared with OpenCode and Neovim, so
+              # the gateway-only capability flags are added here rather than
+              # there.
+              #
+              # `supportsPromptCacheKey` is not cosmetic: upstream requires
+              # explicit opt-in for a custom OpenAI-compatible route before it
+              # installs cache-TTL context pruning (see
+              # docs/concepts/session-pruning.md), so without it the
+              # `contextPruning` block below would be silently inert. Both
+              # flags were verified against this endpoint, not assumed: a
+              # `prompt_cache_key` request returned 200, and repeating a 12k
+              # prompt returned `cached_tokens: 11904`.
+              #
+              # `supportsUsageInStreaming`: remote `openai-completions`
+              # endpoints default to `false`, which suppresses
+              # `stream_options.include_usage`; this endpoint accepts it, and
+              # without it streamed turns report no token usage.
+              models = map (m:
+                m
+                // {
+                  compat = {
+                    supportsPromptCacheKey = true;
+                    supportsUsageInStreaming = true;
+                  };
+                })
+              cc.models;
             };
           };
 
@@ -294,6 +347,41 @@
           # the first path segment is the provider name, so a model id that
           # itself contains a slash would make that split ambiguous.
           agents.defaults.model.primary = "commandcode/${cc.defaultModel}";
+
+          # --- Token economics -------------------------------------------
+          # Every turn re-sends the whole conversation, so cost is
+          # `turns x context size`, not `turns x message length`. Measured on
+          # this gateway: ~83k tokens per request on a 1d9h-old session versus
+          # an ~11k floor on a fresh one, and 28% of a day's usage came from
+          # `sleep`-poll wakeups re-sending a full context to read one line of
+          # output. The two settings below shrink the per-turn payload; the
+          # rest is usage discipline (task-scoped sessions, no poll loops).
+          #
+          # See docs/openclaw.md -> "Token use" before changing these.
+          agents.defaults.contextPruning = {
+            # Prune old tool results (exec output, file reads) from the
+            # projected context. Upstream default is `off`; measured turns were
+            # dominated by accumulated tool output. `cache-ttl` keeps a stable
+            # projection between rounds so the provider prompt cache still
+            # hits, and a 10m TTL means pruning happens within a working
+            # session rather than only across long gaps.
+            mode = "cache-ttl";
+            ttl = "10m";
+          };
+
+          agents.defaults.compaction = {
+            # The verbatim tail and the summary are both replayed on every
+            # later turn, so both are a recurring cost. Upstream defaults are
+            # 20000 and 16000 characters.
+            keepRecentTokens = 8000;
+            maxSummaryChars = 6000;
+            # Summaries need no reasoning tokens; `low` (the default) is paid
+            # on every compaction.
+            thinkingLevel = "off";
+            # Summarise on the fast model. Summary quality is bounded by the
+            # transcript, not by model depth, and this is a background cost.
+            model = "commandcode/${cc.fastModel}";
+          };
         };
       };
 
